@@ -272,10 +272,11 @@ UPDATE users SET role = 'ROLE_ADMIN' WHERE email = 'admin@example.com';
   ```json
   {
     "query": "How many days of sick leave can I carry forward to next year?",
-    "topK": 4,
-    "similarityThreshold": 0.65
+    "similarityThreshold": 0.5,
+    "topK": 4
   }
   ```
+  `similarityThreshold` sets the minimum vector similarity for retrieved chunks; `topK` limits the number of unique chunks included in the answer context. Defaults are `0.40` and `4`, respectively.
 - **Response** (`200 OK`):
   ```json
   {
@@ -295,6 +296,11 @@ UPDATE users SET role = 'ROLE_ADMIN' WHERE email = 'admin@example.com';
 - **Method & Path**: `GET /api/chat/stream?query=What+are+the+password+requirements%3F`
 - **Headers**: `Accept: text/event-stream`
 - **Response**: Incremental token stream delivered in real-time.
+
+#### Retrieval and duplicate handling
+Both chat endpoints remove duplicate chunks before constructing the language-model context. A chunk's `chunk_id` metadata is used as its identity; if it is missing, the chunk content is used instead.
+
+For `POST /api/chat`, the service requests at least 8 candidates (or twice the requested `topK`, whichever is larger), then retains up to `topK` unique chunks. The streaming endpoint searches for 8 candidates using a similarity threshold of `0.40` and retains up to 4 unique chunks; it does not accept the synchronous endpoint's `topK` or `similarityThreshold` settings.
 
 ---
 

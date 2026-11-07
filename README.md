@@ -80,8 +80,13 @@ curl -X POST "http://localhost:8000/api/documents/sync-local-docs"
 ```bash
 curl -X POST "http://localhost:8000/api/chat" \
      -H "Content-Type: application/json" \
-     -d '{"query": "How many days of casual leave do I get, and can I carry them over?"}'
+     -d '{
+       "query": "How many days of casual leave do I get, and can I carry them over?",
+       "similarityThreshold": 0.5,
+       "topK": 4
+     }'
 ```
+`similarityThreshold` sets the minimum vector similarity for a retrieved chunk to be considered; `topK` limits the number of unique chunks included in the answer context. If omitted, the defaults are `0.40` and `4`, respectively.
 **Sample Response:**
 ```json
 {
@@ -117,6 +122,11 @@ curl -X POST "http://localhost:8000/api/chat" \
 ```bash
 curl -N "http://localhost:8000/api/chat/stream?query=What+are+the+password+requirements+under+IT+security%3F"
 ```
+
+### Retrieval and duplicate handling
+The chat service removes duplicate policy chunks before sending context to the language model. It identifies chunks by their `chunk_id` metadata, falling back to the chunk content when that metadata is unavailable. This helps keep repeated copies from crowding out distinct policy excerpts.
+
+For `POST /api/chat`, the service searches for at least 8 candidate chunks (or twice the requested `topK`, whichever is larger), then includes at most `topK` unique chunks. The streaming endpoint uses a fixed search of 8 candidates and includes at most 4 unique chunks.
 
 ---
 
